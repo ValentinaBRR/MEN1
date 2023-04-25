@@ -10,11 +10,12 @@ import pandas as pd
 
 
 '''
-loads the file into a pandas dataframe
+loads the file extracted from Clinvar into a pandas dataframe
 '''
 path_project = '/Users/valentinaburrai/Downloads/'
 f_risultati = 'clinvar_result_MEN1_2023_04_21.txt'
 df = pd.read_csv(path_project + f_risultati, sep='\t', header=0)
+df.drop_duplicates(inplace=True)
 
 
 '''
@@ -63,30 +64,6 @@ builds a dictionary of exons with their bounds
 the source for the boundaries of exons is:
 https://genome.ucsc.edu/cgi-bin/hgc?hgsid=1612088515_sApfRjuxpPDElNbx7W1C6iadmbkr&g=htcCdnaAliInWindow&i=NM_001370259.2&c=chr11&l=64803513&r=64810716&o=64803515&aliTable=ncbiRefSeqPsl&table=ncbiRefSeqCurated
 accessed on 23 April 2023
-'''
-'''
-introns cancelled out
-l_exon_ranges = [
-    [64810514, 64810551],
-#    [64810133, 64810513],
-    [64809665, 64810132],
-#    [64808100, 64809664],
-    [64807891, 64808099],
-#    [64807681, 64807890],
-    [64807552, 64807680],
-#    [64807220, 64807551],    
-    [64807179, 64807219],
-#    [64807099, 64807178],    
-    [64807011, 64807098],
-#    [64806369, 64807010],    
-    [64806232, 64806368],
-#    [64805771, 64806231],    
-    [64805635, 64805770],
-#    [64805199, 64805634],    
-    [64805034, 64805198],
-#    [64804817, 64805033],    
-    [64803516, 64804816]
-           ]
 '''
 l_ranges = [
     [64810514, 64810551],
@@ -171,6 +148,11 @@ df_s['exons'] = pd.cut(df_s.var_starts,
                        bins=l_bins,
                        right=False,
                        labels=l_names)
+
+
+'''
+extract the gene and protein variant
+'''
 l_pathogenic = ['Pathogenic', 'Likely pathogenic', 'Pathogenic/Likely pathogenic']
 check = df_s.exons.value_counts()
 check_p = df_s[df_s.pathogenicity.isin(l_pathogenic)].exons.value_counts()
@@ -191,26 +173,37 @@ df_s['variant'] = df_s['Name'].str.extract(
     pat=rgx_var,
     expand=True)
 
+'''
+gets the list of single nucleotide polymorphism as per dbSNP
+'''
+
 df_s['dbSNP ID'].value_counts()
-
-'''
-attributes the relevant exon to each listed mutation
-'''
-
-                                    
-
 df['dbSNP ID'].unique().tolist()
 s=df[df['dbSNP ID'].notnull()]['dbSNP ID'].unique().tolist()
 
 with open('/Users/valentinaburrai/Desktop/Ids.txt', "w") as outfile:
     outfile.write("\n".join(s))
-    
+
+'''
+loads the file with data from dbSNP, downloaded on
+23 April 2023 using the list above to conduct a batch entrez extraction from
+https://www.ncbi.nlm.nih.gov/sites/batchentrez
+'''    
 
 f_risults_snp = 'snp_result_NM_001370259.2_2023_04_23.txt'
 df_snp = pd.read_csv(path_project + f_risults_snp, sep='\t', header=0)
+df_snp.drop_duplicates(inplace=True)
 df_snp = df_snp[df_snp['#chr'] != '#chr'].copy()
+
+'''
+harmonises the format of SNP ids between the two data sets
+'''
+
 df_snp['dbSNP ID'] = df_snp['snp_id'].map('rs{}'.format)
 
+'''
+merges the two datasets
+'''
 
 df_m = pd.merge(df_s, df_snp, how='outer', on='dbSNP ID')
 check = df_m[df_m['dbSNP ID'].isnull()]
