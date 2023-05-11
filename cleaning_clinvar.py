@@ -357,6 +357,36 @@ df['var_type'] = np.where(
                           'missense',
                           df.var_type)
 
+
+d_aa_type= {
+    'R': 'charged_positive',
+    'H': 'charged_positive',
+    'K': 'charged_positive',
+    'D': 'charged_negative',
+    'E': 'charged_negative',
+    'S': 'polar_uncharged',
+    'T': 'polar_uncharged',
+    'N': 'polar_uncharged',
+    'Q': 'polar_uncharged',
+    'A': 'neutral',
+    'V': 'neutral',
+    'I': 'neutral',
+    'L': 'neutral',
+    'M': 'neutral',
+    'F': 'neutral',
+    'Y': 'neutral',
+    'W': 'neutral',
+    'C': 'special_case',
+    'U': 'special_case',
+    'G': 'special_case',
+    'P': 'special_case'
+    }
+
+df['aa_original_type'] = df.aa_original.map(d_aa_type)
+
+df['aa_substitution_type'] = df.aa_substitution.map(d_aa_type)
+
+
 '''
 df['aa_var'] = df.aa_variant
 
@@ -394,6 +424,7 @@ l_cols_to_keep = ['VariationID', 'AlleleID(s)',
                   'variant', 'var_starts', 'exons',
                   'aa_variant','prot_change',
                   'aa_original', 'aa_substitution',
+                  'aa_original_type', 'aa_substitution_type',
                   'aa_location','aa_mapped_to_NextProt',
                   'functional_domain', 'var_type']
 
