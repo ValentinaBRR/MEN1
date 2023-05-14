@@ -375,13 +375,12 @@ d_aa_type= {
     'I': 'neutral',
     'L': 'neutral',
     'M': 'neutral',
-    'F': 'neutral',
-    'Y': 'neutral',
-    'W': 'neutral',
-    'C': 'special_case',
-    'U': 'special_case',
-    'G': 'special_case',
-    'P': 'special_case'
+    'F': 'aromatic',
+    'Y': 'aromatic',
+    'W': 'aromatic',
+    'C': 'polar_uncharged',
+    'G': 'neutral',
+    'P': 'neutral'
     }
 
 df['aa_wt_type'] = df.aa_wild_type.map(d_aa_type)
