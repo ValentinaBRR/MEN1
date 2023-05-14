@@ -44,7 +44,7 @@ df.name = df.name.str.replace('\(MEN1\)','', regex=True)
 df['name_chromosome'] = df.name[df.name.str.contains('NC_', regex=True)]
 df['name_transcript'] = df.name[df.name.str.contains('NM_', regex=True)]
 
-rgx_transcript_name = r'(?P<transcript>N.+?(?=\:)):(?P<variant>(?<=\:).+?(?=\s*?\(|$))(?P<aa_variant>(?=\s\().+?(?<=\)))?'
+rgx_transcript_name = r'(?P<transcript>N.+?(?=\:)):(?P<gene_var>(?<=\:).+?(?=\s*?\(|$))(?P<aa_variant>(?=\s\().+?(?<=\)))?'
 df = df.join(df.name_transcript.str.extract(pat=rgx_transcript_name,
                                             expand=True))
 df.aa_variant = df.aa_variant.str.strip()
@@ -82,8 +82,9 @@ df['lr'] = df['Clinical significance (Last reviewed)'].str.extract(
     expand=True)
 df['lr'].dtype
 
-df['last_review'] = pd.to_datetime(df['lr']).dt.date
-df['last_review'].dtype
+df['last_review'] = pd.to_datetime(df['lr'])
+#df['last_review'] = pd.to_datetime(df['lr']).dt.date
+#df['last_review'].dtype
 
 '''
 drops submissions that did not specify a condition
@@ -196,7 +197,7 @@ df_1['compara'] = np.where(df_1.loc_pp_name != df_1.loc_pp_submission,
 
 df_1['aa_location'] = df_1['loc_pp_submission']
 
-rgx_aa_1 = r'(?P<aa_original>^[A-Z]{1})(?:\d+)(?P<aa_substitution>[A-Z]{1})'
+rgx_aa_1 = r'(?P<aa_wild_type>^[A-Z]{1})(?:\d+)(?P<aa_mutated>[A-Z]{1})'
 df_1 = df_1.join(df_1['Protein change'].str.extract(pat=rgx_aa_1, expand=True))
 
 
@@ -222,7 +223,7 @@ df_2['compara'] = np.where(df_2.loc_pp_name != df_2.loc_pp_submission,
 check = df_2[df_2.compara != 'problem']
 df_2['aa_location'] = df_2['loc_pp_submission']
 
-#rgx_aa_2 = r'(?P<aa_original>^[A-Z]{1}[a-z]{2})(?:\d+)(?P<aa_substitution>[A-Z]{1}[a-z]{2})'
+#rgx_aa_2 = r'(?P<aa_wild_type>^[A-Z]{1}[a-z]{2})(?:\d+)(?P<aa_mutated>[A-Z]{1}[a-z]{2})'
 df_2 = df_2.join(df_2['prot_change'].str.extract(pat=rgx_aa_1, expand=True))
 
 '''
@@ -230,7 +231,7 @@ extract any data on any variant
 '''
 df_3['aa_location'] = df_3.aa_variant.str.extract(r'(\d{1,3})')
 
-rgx_aa_3 = r'(?P<aa_original>^[A-Z]{1}[a-z]{2})(?:\d+)(?P<aa_substitution>[A-Z]{1}[a-z]{2})'
+rgx_aa_3 = r'(?P<aa_wild_type>^[A-Z]{1}[a-z]{2})(?:\d+)(?P<aa_mutated>[A-Z]{1}[a-z]{2})'
 df_3 = df_3.join(df_3['aa_variant'].str.extract(pat=rgx_aa_3, expand=True))
 
 '''
@@ -250,7 +251,7 @@ then maps it to the functional domains listed by NextProt
 
 
 
-#rgx_aa_var = r'(?P<aa_original>^[A-Z]{1}[a-z]{2})(?P<aa_position>\d+)(?P<aa_substitution>[A-Z]{1}[a-z]{2})'
+#rgx_aa_var = r'(?P<aa_wild_type>^[A-Z]{1}[a-z]{2})(?P<aa_position>\d+)(?P<aa_mutated>[A-Z]{1}[a-z]{2})'
 #df = df.join(df.aa_variant.str.extract(pat=rgx_aa_var, expand=True))
 
 
@@ -274,7 +275,8 @@ tags each variation by type
 # generates a unified variable for polypeptide variants from both name and submission                            
 df['aa_var'] = np.where(df.prot_change.notnull(),
                         df.prot_change,
-                        df.aa_variant)   
+                        df.aa_variant) 
+
 
 # tags premature termination codon
 df['var_type'] = np.where(
@@ -302,27 +304,27 @@ df['var_type'] = np.where(
      &
      (df.aa_var.str.endswith('=')))
     |
-    ((df.aa_substitution.notnull())
+    ((df.aa_mutated.notnull())
      &
-     (df.aa_original == df.aa_substitution))),
+     (df.aa_wild_type == df.aa_mutated))),
                           'synonymous',
                           df.var_type)
 # tags start-codon loss
 df['var_type'] = np.where(
     ((df.aa_mapped_to_NextProt == 1)
      &
-     (df.aa_original.isin(['Met', 'M']))),
+     (df.aa_wild_type.isin(['Met', 'M']))),
     'start_codon_loss',
      df.var_type)
 
 #tags splicing donor site variation
 df['var_type'] = np.where(
     (
-     (df.variant.str.contains(r'\+1'))
+     (df.gene_var.str.contains(r'\+1'))
      |
-     (df.variant.str.contains(r'\+2'))
+     (df.gene_var.str.contains(r'\+2'))
      |
-     (df.variant.str.contains(r'\+3'))
+     (df.gene_var.str.contains(r'\+3'))
      ),
     'splice_donor_site_variation',
      df.var_type)
@@ -330,11 +332,11 @@ df['var_type'] = np.where(
 #tags splicing acceptor site variation
 df['var_type'] = np.where(
     (
-     (df.variant.str.contains(r'\-1'))
+     (df.gene_var.str.contains(r'\-1'))
      |
-     (df.variant.str.contains(r'\-2'))
+     (df.gene_var.str.contains(r'\-2'))
      |
-     (df.variant.str.contains(r'\-3'))
+     (df.gene_var.str.contains(r'\-3'))
      ),
     'splice_acceptor_site_variation',
      df.var_type)
@@ -351,9 +353,9 @@ df['var_type'] = np.where(
 df['var_type'] = np.where(
     ((df.var_type == '')
      &
-     (df.aa_original.notnull())
+     (df.aa_wild_type.notnull())
      &
-     (df.aa_original != df.aa_substitution)),
+     (df.aa_wild_type != df.aa_mutated)),
                           'missense',
                           df.var_type)
 
@@ -382,10 +384,15 @@ d_aa_type= {
     'P': 'special_case'
     }
 
-df['aa_original_type'] = df.aa_original.map(d_aa_type)
+df['aa_wt_type'] = df.aa_wild_type.map(d_aa_type)
 
-df['aa_substitution_type'] = df.aa_substitution.map(d_aa_type)
+df['aa_m_type'] = df.aa_mutated.map(d_aa_type)
 
+df['missense_type'] = np.where(
+    df.aa_wt_type.notnull(),
+    df.aa_wt_type + '_to_' + df.aa_m_type,
+    ''
+    )
 
 '''
 df['aa_var'] = df.aa_variant
@@ -415,24 +422,90 @@ str_replaced = reduce(lambda x, y: x.replace(*y), [df., *list(d_aa.items())])
 for k,v in d.iteritems():
     address = address.upper().replace(k, v)
 '''
+'''
+finds duplicates among the polypeptide variations which were submitted in
+different submissions.
+It then ranks them by the quality of the evidence and when the quality of the
+evidence is missing it ranks them by submission id.
+It keeps the submission with the highest evidence rank, when ranks are equal
+it keeps those submitted first.
+'''
+d_rev_status = {
+    'no assertion provided': 
+        'The allele was included in a submission that did not provide'
+        ' an interpretation.',
+    'no assertion criteria provided': 
+        'The allele was included in a submission with an interpretation'
+        ' but without assertion criteria.',
+    'no assertion for the individual variant':
+        'The allele was not interpreted  directly in any submission; '
+        'it was submitted to ClinVar only as a component of a '
+        'compound heterozygote or a haplotype.',
+    'criteria provided, single submitter': 
+        'One star: One submitter provided an interpretation with assertion'
+        ' criteria.',
+    'criteria provided, conflicting interpretations':
+        'One star: Multiple Submitters provided assertion criteria but there'
+        ' are conflicting interpretations. The independent values are'
+        ' enumerated for clininal significance.',
+    'criteria provided, multiple submitters, no conflicts':
+        'Two stars: Two or more submitters with assertion criteria provided'
+        ' the same interpretation.',
+    'reviewed by expert panel':
+        'Three stars: the variant was reviewed by an expert panel.',
+    'Practice guideline':
+        'Four stars: The variant was reviewed by a professional society that'
+        ' provides practice guideliines.'
+                 }
+    
+evidence_status = pd.Categorical(df['Review status'], categories=d_rev_status.keys(),
+                                 ordered=True)
+df['evidence_status'] = evidence_status 
+
+df_check = df[(df['Review status'] != df.evidence_status)]
+
+df_same_aa_var_from_multiple_submissions = df[df.duplicated(
+    subset=['aa_location', 'aa_variant'], keep=False)].copy()
+
+df_same_aa_var_from_multiple_submissions.sort_values(
+    by=['aa_location', 'aa_variant', 'evidence_status', 'Accession'],
+    ascending=[True, True, False, True],
+    inplace=True)
+
+df_keep = df_same_aa_var_from_multiple_submissions.drop_duplicates(
+    subset=['aa_location', 'aa_variant'], keep='first')
+l_to_drop = df_same_aa_var_from_multiple_submissions.index[
+    ~df_same_aa_var_from_multiple_submissions.index.isin(df_keep.index)]
+
+df = df[~df.index.isin(l_to_drop)]
+
+
+'''
+generates an output file to be used for analysis
+'''
 
 l_cols_to_keep = ['VariationID', 'AlleleID(s)',
-                  'Review status','last_review', 'Accession',
-                  'GRCh38Location', 'dbSNP ID',
-                  'Canonical SPDI','pathogenicity',
-                  'name', 'transcript',
-                  'variant', 'var_starts', 'exons',
-                  'aa_variant','prot_change',
-                  'aa_original', 'aa_substitution',
-                  'aa_original_type', 'aa_substitution_type',
+                  'name','dbSNP ID',
+                  'Canonical SPDI',
+                  'last_review', 'Accession',
+                  'GRCh38Location', 'pathogenicity',
+                  'evidence_status',
+                  'gene_var', 'var_starts', 'exons',
+                  'aa_var',
+                  'aa_wild_type', 'aa_mutated',
+                  'aa_wt_type', 'aa_m_type',
                   'aa_location','aa_mapped_to_NextProt',
-                  'functional_domain', 'var_type']
+                  'functional_domain', 'var_type', 'missense_type']
 
 df_w = df[l_cols_to_keep].copy()
 
-d_rename={'variant': 'gene_variant',
-          'aa_variant': 'aa_variant_from_name',
-          'prot_change': 'aa_variant_from_submission'}
+d_rename={'VariationID': 'var_id',
+          'AlleleID(s)': 'allele_id',
+          'dbSNP ID': 'dbSNP_id',
+          'Canonical SPDI': 'canonical_SPDI',
+          'Accession': 'accession',
+          'GRCh38Location': 'GRCh38_location',
+          }
 
 df_w.rename(columns=d_rename, inplace=True)
 
