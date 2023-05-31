@@ -44,11 +44,11 @@ df.name = df.name.str.replace('\(MEN1\)','', regex=True)
 df['name_chromosome'] = df.name[df.name.str.contains('NC_', regex=True)]
 df['name_transcript'] = df.name[df.name.str.contains('NM_', regex=True)]
 
-rgx_transcript_name = r'(?P<transcript>N.+?(?=\:)):(?P<gene_var>(?<=\:).+?(?=\s*?\(|$))(?P<aa_variant>(?=\s\().+?(?<=\)))?'
+rgx_transcript_name = r'(?P<transcript>N.+?(?=\:)):(?P<gene_var>(?<=\:).+?(?=\s*?\(|$))(?P<aa_var>(?=\s\().+?(?<=\)))?'
 df = df.join(df.name_transcript.str.extract(pat=rgx_transcript_name,
                                             expand=True))
-df.aa_variant = df.aa_variant.str.strip()
-df.aa_variant = df.aa_variant.str.replace('\(p.', '', regex=True
+df.aa_var = df.aa_var.str.strip()
+df.aa_var = df.aa_var.str.replace('\(p.', '', regex=True
                                           ).str.replace('\)', '', regex=True)
 
 '''
@@ -80,11 +80,8 @@ df.pathogenicity.value_counts()
 df['lr'] = df['Clinical significance (Last reviewed)'].str.extract(
     pat=rgx_last_review_date,
     expand=True)
-df['lr'].dtype
-
 df['last_review'] = pd.to_datetime(df['lr'])
-#df['last_review'] = pd.to_datetime(df['lr']).dt.date
-#df['last_review'].dtype
+
 
 '''
 drops submissions that did not specify a condition
@@ -137,109 +134,11 @@ df['exons'] = pd.cut(df.var_starts,
                       bins=l_bins,
                       right=False,
                       labels=l_names)
-           
-'''
-gets the list of single nucleotide polymorphism as per dbSNP
 
+df['aa_location'] = df.aa_var.str.extract(r'(\d{1,3})')
 
-df_s['dbSNP ID'].value_counts()
-df['dbSNP ID'].unique().tolist()
-s=df[df['dbSNP ID'].notnull()]['dbSNP ID'].unique().tolist()
-
-with open('/Users/valentinaburrai/Desktop/Ids.txt', "w") as outfile:
-    outfile.write("\n".join(s))
-'''
-
-'''
-checks that all the submissions are from the same built, so that the ch
-
-'''
-c_1 = df[~(df['Canonical SPDI'].astype(str).str.contains('NC_000011.10'))]
-
-c_2 = df[(df['Protein change'].notnull())
-           &
-           (df['aa_variant'].notnull())][['Protein change', 'aa_variant']]
-
-c_3 = df[(df['Protein change'].isnull())
-             &
-             (df['aa_variant'].notnull())][['Protein change', 'aa_variant']]
-
-c_4 = df[(df['Protein change'].notnull())
-             &
-             (df['aa_variant'].isnull())][['Protein change', 'aa_variant']]
-
-'''
-separates the dataset in two:
-    one dataset df_1 contains only one polypeptide variant,
-    the other dataset df_2 lists many variants per every submission
-'''
-df_1 = df[df['Protein change'].notnull()].copy()
-df_1 = df_1[~df_1['Protein change'].str.contains(',')].copy()
-
-df_2 = df[df['Protein change'].notnull()].copy()
-df_2 = df_2[df_2['Protein change'].str.contains(',')].copy()
-
-df_3 = df[df['Protein change'].isna()].copy()
-
-
-'''
-checks that the location of the polypeptide variation coincides between name
-and submission
-creates one variable only with the location of the variation
-
-'''
-
-df_1['loc_pp_name'] = df_1.aa_variant.str.extract(r'(\d{1,3})')
-df_1['loc_pp_submission'] = df_1['Protein change'].str.extract(r'(\d{1,3})')
-df_1['compara'] = np.where(df_1.loc_pp_name != df_1.loc_pp_submission,
-                           'problem',
-                           np.nan)
-
-df_1['aa_location'] = df_1['loc_pp_submission']
-
-rgx_aa_1 = r'(?P<aa_wild_type>^[A-Z]{1})(?:\d+)(?P<aa_mutated>[A-Z]{1})'
-df_1 = df_1.join(df_1['Protein change'].str.extract(pat=rgx_aa_1, expand=True))
-
-
-'''
-explodes all variations when a submission contains more than one
-creates one variable only with the location of the variation
-'''
-df_vars = df_2[['VariationID']].join(df_2['Protein change'].str.split(',', expand=True))
-df_vars = df_vars.melt(id_vars = 'VariationID')
-df_vars.drop('variable', axis='columns', inplace=True)
-df_vars.rename(columns={'value': 'prot_change'}, inplace=True)
-df_vars.dropna(inplace=True)
-df_vars.prot_change = df_vars.prot_change.str.strip()
-
-df_2 = pd.merge(df_2, df_vars,
-                how='left',
-                on='VariationID')
-df_2['loc_pp_name'] = df_2.aa_variant.str.extract(r'(\d{1,3})')
-df_2['loc_pp_submission'] = df_2['prot_change'].str.extract(r'(\d{1,3})')
-df_2['compara'] = np.where(df_2.loc_pp_name != df_2.loc_pp_submission,
-                           'problem',
-                           np.nan)
-check = df_2[df_2.compara != 'problem']
-df_2['aa_location'] = df_2['loc_pp_submission']
-
-#rgx_aa_2 = r'(?P<aa_wild_type>^[A-Z]{1}[a-z]{2})(?:\d+)(?P<aa_mutated>[A-Z]{1}[a-z]{2})'
-df_2 = df_2.join(df_2['prot_change'].str.extract(pat=rgx_aa_1, expand=True))
-
-'''
-extract any data on any variant
-'''
-df_3['aa_location'] = df_3.aa_variant.str.extract(r'(\d{1,3})')
-
-rgx_aa_3 = r'(?P<aa_wild_type>^[A-Z]{1}[a-z]{2})(?:\d+)(?P<aa_mutated>[A-Z]{1}[a-z]{2})'
-df_3 = df_3.join(df_3['aa_variant'].str.extract(pat=rgx_aa_3, expand=True))
-
-'''
-recreates the data frame df
-then etracts the position of the variant, maps it and mathces it to NextProt
-'''
-df= pd.concat([df_1, df_2,df_3], axis='rows', ignore_index=True)
-
+rgx_aa_var = r'(?P<aa_wild_type>^[A-Z]{1}[a-z]{2})(?:\d+)(?P<aa_mutated>[A-Z]{1}[a-z]{2})'
+df = df.join(df['aa_var'].str.extract(pat=rgx_aa_var, expand=True))
 
 
 '''
@@ -248,11 +147,6 @@ maps the amino acid of the variant to the protein isoform that
 NextProt considers canonical
 then maps it to the functional domains listed by NextProt 
 '''
-
-
-
-#rgx_aa_var = r'(?P<aa_wild_type>^[A-Z]{1}[a-z]{2})(?P<aa_position>\d+)(?P<aa_mutated>[A-Z]{1}[a-z]{2})'
-#df = df.join(df.aa_variant.str.extract(pat=rgx_aa_var, expand=True))
 
 
 df['aa_mapped_to_NextProt'] = np.where(df.aa_location.astype(float) <= 148,
@@ -272,11 +166,21 @@ df['functional_domain'] = np.where(
 '''
 tags each variation by type
 '''
-# generates a unified variable for polypeptide variants from both name and submission                            
-df['aa_var'] = np.where(df.prot_change.notnull(),
-                        df.prot_change,
-                        df.aa_variant) 
+#tags delins
+df['var_type'] = np.where(
+    ((df.aa_var.notnull())
+     &
+     (df.aa_var.str.contains('del'))),
+                          'delins',
+                          '')
 
+#tags small deletes
+df['var_type'] = np.where(
+    ((df.aa_var.notnull())
+     &
+     (df.aa_var.str.contains('del'))),
+                          'deletion',
+                          df.var_type)
 
 # tags premature termination codon
 df['var_type'] = np.where(
@@ -286,7 +190,7 @@ df['var_type'] = np.where(
       |
       (df.aa_var.str.endswith('*')))),
                           'premature_termination_codon',
-                          '')
+                          df.var_type)
 
 # tags loss of termination codon
 df['var_type'] = np.where(
@@ -319,27 +223,23 @@ df['var_type'] = np.where(
 
 #tags splicing donor site variation
 df['var_type'] = np.where(
-    (
-     (df.gene_var.str.contains(r'\+1'))
-     |
-     (df.gene_var.str.contains(r'\+2'))
-     |
-     (df.gene_var.str.contains(r'\+3'))
-     ),
-    'splice_donor_site_variation',
+     (df.gene_var.str.contains(r'\+\d{1}')),
+    'splice_donor_site_variant',
      df.var_type)
 
 #tags splicing acceptor site variation
 df['var_type'] = np.where(
-    (
-     (df.gene_var.str.contains(r'\-1'))
-     |
-     (df.gene_var.str.contains(r'\-2'))
-     |
-     (df.gene_var.str.contains(r'\-3'))
-     ),
-    'splice_acceptor_site_variation',
+     (df.gene_var.str.contains(r'\-\d{1}')),
+    'splice_acceptor_site_variant',
      df.var_type)
+
+#tags intronic variant
+df['var_type'] = np.where(
+     ((df.gene_var.str.contains(r'\-\d{2}'))
+      |(df.gene_var.str.contains(r'\+\d{2}'))),
+    'intronic_variant',
+     df.var_type)
+
 
 #tags frameshift variations
 df['var_type'] = np.where(
@@ -359,7 +259,7 @@ df['var_type'] = np.where(
                           'missense',
                           df.var_type)
 
-
+'''
 d_aa_type= {
     'R': 'charged_positive',
     'H': 'charged_positive',
@@ -382,44 +282,61 @@ d_aa_type= {
     'G': 'neutral',
     'P': 'neutral'
     }
+'''
+#{k:v for k, v in d_aa.items() if v == 'P'}
+d_aa_type= {
+    'Arg': 'charged_positive',
+    'His': 'charged_positive',
+    'Lys': 'charged_positive',
+    'Asp': 'charged_negative',
+    'Glu': 'charged_negative',
+    'Ser': 'polar_uncharged',
+    'Thr': 'polar_uncharged',
+    'Asn': 'polar_uncharged',
+    'Gln': 'polar_uncharged',
+    'Ala': 'neutral',
+    'Val': 'neutral',
+    'Ile': 'neutral',
+    'Leu': 'neutral',
+    'Met': 'neutral',
+    'Phe': 'aromatic',
+    'Tyr': 'aromatic',
+    'Trp': 'aromatic',
+    'Cys': 'polar_uncharged',
+    'Gly': 'neutral',
+    'Pro': 'neutral'
+    }
 
 df['aa_wt_type'] = df.aa_wild_type.map(d_aa_type)
 
 df['aa_m_type'] = df.aa_mutated.map(d_aa_type)
 
 df['missense_type'] = np.where(
-    df.aa_wt_type.notnull(),
+    (df.aa_wt_type.notnull()
+    &
+    df.aa_m_type.notnull()),
     df.aa_wt_type + '_to_' + df.aa_m_type,
     ''
     )
 
+
+d_rename={'VariationID': 'var_id',
+          'AlleleID(s)': 'allele_id',
+          'dbSNP ID': 'dbSNP_id',
+          'Canonical SPDI': 'canonical_SPDI',
+          'Accession': 'accession',
+          'GRCh38Location': 'GRCh38_location',
+          }
+
+df.rename(columns=d_rename, inplace=True)
+
 '''
-df['aa_var'] = df.aa_variant
-
-
-from functools import reduce
-
-#str_to_replace = "The string for replacement."
-#replacement_dict = {"The ": "A new ", "for ": "after "}
-
-df['aa_var'] = reduce(lambda x, y: x.replace(*y), [df.aa_var, *list(d_aa.items())])
-
 d_aa = {
         'Cys': 'C', 'Asp': 'D', 'Ser': 'S', 'Gln': 'Q', 'Lys': 'K',
      'Ile': 'I', 'Pro': 'P', 'Thr': 'T', 'Phe': 'F', 'Asn': 'N', 
      'Gly': 'G', 'His': 'H', 'Leu': 'L', 'Arg': 'R', 'Trp': 'W', 
      'Ala': 'A', 'Val':'V', 'Glu': 'E', 'Tyr': 'Y', 'Met': 'M'
         }
-
-import Bio
-from Bio.Data.IUPACData import protein_letters_3to1
-help(Bio.SeqUtils.IUPACData)
-Bio.Data.IUPACData.protein_letters_3to1['Ala']
-
-
-str_replaced = reduce(lambda x, y: x.replace(*y), [df., *list(d_aa.items())])
-for k,v in d.iteritems():
-    address = address.upper().replace(k, v)
 '''
 '''
 finds duplicates among the polypeptide variations which were submitted in
@@ -464,52 +381,102 @@ df['evidence_status'] = evidence_status
 df_check = df[(df['Review status'] != df.evidence_status)]
 
 df_same_aa_var_from_multiple_submissions = df[df.duplicated(
-    subset=['aa_location', 'aa_variant'], keep=False)].copy()
+    subset=['aa_location', 'aa_var'], keep=False)].copy()
 
 df_same_aa_var_from_multiple_submissions.sort_values(
-    by=['aa_location', 'aa_variant', 'evidence_status', 'Accession'],
+    by=['aa_location', 'aa_var', 'evidence_status', 'accession'],
     ascending=[True, True, False, True],
     inplace=True)
 
 df_keep = df_same_aa_var_from_multiple_submissions.drop_duplicates(
-    subset=['aa_location', 'aa_variant'], keep='first')
+    subset=['aa_location', 'aa_var'], keep='first')
 l_to_drop = df_same_aa_var_from_multiple_submissions.index[
     ~df_same_aa_var_from_multiple_submissions.index.isin(df_keep.index)]
 
-df = df[~df.index.isin(l_to_drop)]
-
 
 '''
-generates an output file to be used for analysis
+generates three outputs: 
+    one output for genes (as in some instances there are more than one gene
+                          variant per protein variant)
+    one output for proteins (dropping duplicate genes variants for the same
+                             protein variant)
+    one output for introni variants
+                             
 '''
+l_cols_to_keep = [
+    'var_id', 'allele_id',
+    'name','dbSNP_id',
+    'canonical_SPDI',
+    'last_review', 'accession',
+    'GRCh38_location', 'pathogenicity',
+    'evidence_status',
+    'gene_var', 'var_starts', 'exons',
+    'aa_location','aa_mapped_to_NextProt',
+    'aa_var',
+    'aa_wild_type', 'aa_mutated',
+    'aa_wt_type', 'aa_m_type',
+    'var_type',
+    'functional_domain',
+    'missense_type'
+    ]
+df_full = df[l_cols_to_keep].copy()
+df_full.sort_values('var_starts', ascending=False, inplace=True)
+df_full.to_excel(path_project + 'cv_full.xlsx', index=False,
+                                 na_rep='',              
+                                 freeze_panes=(1,1))
 
-l_cols_to_keep = ['VariationID', 'AlleleID(s)',
-                  'name','dbSNP ID',
-                  'Canonical SPDI',
-                  'last_review', 'Accession',
-                  'GRCh38Location', 'pathogenicity',
-                  'evidence_status',
-                  'gene_var', 'var_starts', 'exons',
-                  'aa_var',
-                  'aa_wild_type', 'aa_mutated',
-                  'aa_wt_type', 'aa_m_type',
-                  'aa_location','aa_mapped_to_NextProt',
-                  'functional_domain', 'var_type', 'missense_type']
 
-df_w = df[l_cols_to_keep].copy()
 
-d_rename={'VariationID': 'var_id',
-          'AlleleID(s)': 'allele_id',
-          'dbSNP ID': 'dbSNP_id',
-          'Canonical SPDI': 'canonical_SPDI',
-          'Accession': 'accession',
-          'GRCh38Location': 'GRCh38_location',
-          }
+l_cols_to_keep_intronic = [
+    'var_id', 'allele_id',
+    'name','dbSNP_id',
+    'canonical_SPDI',
+    'last_review', 'accession',
+    'GRCh38_location', 'pathogenicity',
+    'evidence_status',
+    'gene_var', 'var_starts', 'exons',
+    'var_type', 'missense_type'
+                            ]
 
-df_w.rename(columns=d_rename, inplace=True)
+df_intr = df[df.var_type.str.contains('splic')][l_cols_to_keep_intronic]
+df_intr.sort_values('var_starts', ascending=False, inplace=True)
 
-df_w.sort_values('var_starts', ascending=False, inplace=True)
+df_intr.to_excel(path_project + 'cv_intronic.xlsx', index=False,
+              na_rep='',              
+              freeze_panes=(1,1))
 
-df_w.to_excel(path_project + 'clinvar_wrangled.xlsx', index=False,
+l_cols_to_keep_gene = [
+    'var_id', 'allele_id',
+    'name','dbSNP_id',
+    'canonical_SPDI',
+    'last_review', 'accession',
+    'GRCh38_location', 'pathogenicity',
+    'evidence_status',
+    'gene_var', 'var_starts', 'exons',
+                        ]
+df_gene = df[~df.var_type.str.contains('splic')][l_cols_to_keep_gene]
+df_gene.sort_values('var_starts', ascending=False, inplace=True)
+
+df_gene.to_excel(path_project + 'cv_gene.xlsx', index=False,
+              na_rep='',              
+              freeze_panes=(1,1))
+
+l_cols_to_keep_protein = [
+    'var_id', 'allele_id',
+    'name','dbSNP_id',
+    'canonical_SPDI',
+    'last_review', 'accession',
+    'GRCh38_location', 'pathogenicity',
+    'evidence_status', 'exons',
+    'aa_var',
+    'aa_wild_type', 'aa_mutated',
+    'aa_wt_type', 'aa_m_type',
+    'aa_location','aa_mapped_to_NextProt',
+    'functional_domain', 'var_type', 'missense_type'
+                            ]
+
+df_prot = df[~df.index.isin(l_to_drop)][l_cols_to_keep_protein]
+df_prot.sort_values('aa_mapped_to_NextProt', ascending=True, inplace=True)
+df_prot.to_excel(path_project + 'cv_protein.xlsx', index=False,
               na_rep='',              
               freeze_panes=(1,1))
