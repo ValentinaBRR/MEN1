@@ -85,7 +85,7 @@ ax.set_xlabel('Chromosome 11q, minus strand', fontsize=9)
 
 ax.set_yticks([15, 25], labels=['introns', 'exons'])
 
-ax.grid(False)  # Make grid lines visible
+ax.grid(False)  # Make grid lines (in)visible
 ax.spines['left'].set_visible(False)
 ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)

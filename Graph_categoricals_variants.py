@@ -59,7 +59,7 @@ fig, axs = plt.subplots(nrows=len(l_variants),
                        figsize=(15*cm, 8*cm),
                        sharex=True)  #rows, columns, width and height
 plt.subplots_adjust(hspace=0)
-fig.suptitle('Pathological variants', fontsize=10)
+fig.suptitle('Pathogenic variants', fontsize=10)
 for i, ax in enumerate(axs.flat):
 
     sns.stripplot(
@@ -85,8 +85,15 @@ for i, ax in enumerate(axs.flat):
     ax.spines['bottom'].set_visible(False)
     ax.set_yticks([])
     ax.set_yticklabels([])
+    ax.set_xlim(0, 610)
+    plt.xticks(
+    #    rotation=20,
+        ha='right',
+        fontsize=8)
     ax.set_xlabel('Position on the amino acid sequence', fontsize=8)
     ax.set_ylabel('')
+    ax.tick_params(bottom=False,
+                    left=False)
 
 plt.tight_layout()
 plt.savefig(fname=path_graphs + 'Variants.png', dpi=300)

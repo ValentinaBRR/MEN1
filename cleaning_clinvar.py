@@ -321,6 +321,7 @@ df['missense_type'] = np.where(
 
 
 d_rename={'VariationID': 'var_id',
+          'Condition(s)': 'condition',
           'AlleleID(s)': 'allele_id',
           'dbSNP ID': 'dbSNP_id',
           'Canonical SPDI': 'canonical_SPDI',
@@ -409,6 +410,7 @@ l_cols_to_keep = [
     'canonical_SPDI',
     'last_review', 'accession',
     'GRCh38_location', 'pathogenicity',
+    'condition',
     'evidence_status',
     'gene_var', 'var_starts', 'exons',
     'aa_location','aa_mapped_to_NextProt',

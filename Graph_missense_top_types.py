@@ -100,8 +100,17 @@ for i, ax in enumerate(axs.flat):
     ax.spines['bottom'].set_visible(False)
     ax.set_yticks([])
     ax.set_yticklabels([])
+    ax.set_xlim(0, 610)
+    plt.xticks(
+    #    rotation=20,
+        ha='right',
+        fontsize=8)
+
     ax.set_xlabel('Position on the amino acid sequence', fontsize=8)
     ax.set_ylabel('')
+    ax.tick_params(bottom=False,
+                    left=False)
+
 
 plt.tight_layout()
 plt.savefig(fname=path_graphs + 'Missense.png', dpi=300)
