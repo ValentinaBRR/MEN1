@@ -22,7 +22,7 @@ loads Clinvar data tagged with Ensembl, UniProt and NextProt information
 and tagged for type of variant
 '''
 df = pd.read_excel(path_project + f_clinvar)
-
+df = df[df.var_class == 'germline']
 df.condition.value_counts()
 
 df_c = df[['var_id', 'condition']].join(df.condition.str.split('|', expand=True))
@@ -151,64 +151,66 @@ ax.annotate('Somatotroph adenoma', (-64807000, 5),
             xytext=(0.82, 0.98), textcoords='axes fraction',
 #            arrowprops=dict(facecolor='gray', shrink=0.95),
             fontsize=7,
-            color='mistyrose',
+            color='orchid',
             horizontalalignment='right', verticalalignment='top')
 ax.annotate('Adrenocortical adenoma', (-64807000, 5),
             xytext=(0.8, 0.93), textcoords='axes fraction',
 #            arrowprops=dict(facecolor='gray', shrink=0.95),
             fontsize=7,
-            color='orchid',
+            color='rosybrown',
             horizontalalignment='right', verticalalignment='top')
 ax.annotate('Ependymoma', (-64807000, 5),
             xytext=(0.41, 0.87), textcoords='axes fraction',
 #            arrowprops=dict(facecolor='gray', shrink=0.95),
             fontsize=7,
-            color='rosybrown',
-            horizontalalignment='right', verticalalignment='top')
-ax.annotate('Thyroid adenoma', (-64807000, 5),
-            xytext=(0.38, 0.82), textcoords='axes fraction',
-#            arrowprops=dict(facecolor='gray', shrink=0.95),
-            fontsize=7,
             color='royalblue',
             horizontalalignment='right', verticalalignment='top')
-ax.annotate('Hypertensive disorder', (-64807000, 5),
-            xytext=(0.38, 0.76), textcoords='axes fraction',
+ax.annotate('Thyroid adenoma', (-64807000, 5),
+            xytext=(0.38, 0.80), textcoords='axes fraction',
 #            arrowprops=dict(facecolor='gray', shrink=0.95),
             fontsize=7,
             color='orange',
             horizontalalignment='right', verticalalignment='top')
-ax.annotate('GI stromal tumour', (-64807000, 5),
-            xytext=(0.38, 0.7), textcoords='axes fraction',
+ax.annotate('Hypertensive disorder', (-64807000, 5),
+            xytext=(0.38, 0.74), textcoords='axes fraction',
 #            arrowprops=dict(facecolor='gray', shrink=0.95),
             fontsize=7,
             color='mediumseagreen',
             horizontalalignment='right', verticalalignment='top')
-ax.annotate('Diabetes mellitus', (-64807000, 5),
-            xytext=(0.38, 0.64), textcoords='axes fraction',
+ax.annotate('GI stromal tumour', (-64807000, 5),
+            xytext=(0.38, 0.68), textcoords='axes fraction',
 #            arrowprops=dict(facecolor='gray', shrink=0.95),
             fontsize=7,
             color='tomato',
             horizontalalignment='right', verticalalignment='top')
-ax.annotate('Chronic Diarrhea', (-64807000, 5),
-            xytext=(0.38, 0.58), textcoords='axes fraction',
+ax.annotate('Diabetes mellitus', (-64807000, 5),
+            xytext=(0.38, 0.61), textcoords='axes fraction',
 #            arrowprops=dict(facecolor='gray', shrink=0.95),
             fontsize=7,
             color='olivedrab',
             horizontalalignment='right', verticalalignment='top')
+ax.annotate('Chronic Diarrhea', (-64807000, 5),
+            xytext=(0.38, 0.55), textcoords='axes fraction',
+#            arrowprops=dict(facecolor='gray', shrink=0.95),
+            fontsize=7,
+            color='pink',
+            horizontalalignment='right', verticalalignment='top')
+'''
 ax.annotate('Angiofibroma, somatic', (-64807000, 5),
             xytext=(0.65, 0.52), textcoords='axes fraction',
 #            arrowprops=dict(facecolor='gray', shrink=0.95),
             fontsize=7,
             color='pink',
             horizontalalignment='right', verticalalignment='top')
-ax.annotate('Parathyroid gland adenoma', (-64807000, 5),
-            xytext=(0.41, 0.47), textcoords='axes fraction',
+'''
+ax.annotate('Pancreatic insulin-producing NET', (-64807000, 5),
+            xytext=(0.455, 0.49), textcoords='axes fraction',
 #            arrowprops=dict(facecolor='gray', shrink=0.95),
             fontsize=7,
             color='plum',
             horizontalalignment='right', verticalalignment='top')
-ax.annotate('Pancreatic insulin-producing NET', (-64807000, 5),
-            xytext=(0.46, 0.41), textcoords='axes fraction',
+ax.annotate('Parathyroid gland adenoma', (-64807000, 5),
+            xytext=(0.41, 0.43), textcoords='axes fraction',
 #            arrowprops=dict(facecolor='gray', shrink=0.95),
             fontsize=7,
             color='lightskyblue',
@@ -220,25 +222,25 @@ ax.annotate('Medullary thyroid carcinoma', (-64807000, 5),
             color='forestgreen',
             horizontalalignment='right', verticalalignment='top')
 ax.annotate('Calcium nephrolithiasis', (-64807000, 5),
-            xytext=(0.38, 0.30), textcoords='axes fraction',
+            xytext=(0.375, 0.31), textcoords='axes fraction',
 #            arrowprops=dict(facecolor='gray', shrink=0.95),
             fontsize=7,
             color='lightcoral',
             horizontalalignment='right', verticalalignment='top')
 ax.annotate('Abnormal CCC', (-64807000, 5),
-            xytext=(0.3, 0.24), textcoords='axes fraction',
+            xytext=(0.295, 0.25), textcoords='axes fraction',
 #            arrowprops=dict(facecolor='gray', shrink=0.95),
             fontsize=7,
             color='powderblue',
             horizontalalignment='right', verticalalignment='top')
-ax.annotate('Metastatic PNET', (-64807000, 5),
-            xytext=(0.58, 0.18), textcoords='axes fraction',
+ax.annotate('Primary hyperparatyroidism', (-64807000, 5),
+            xytext=(0.415, 0.185), textcoords='axes fraction',
 #            arrowprops=dict(facecolor='gray', shrink=0.95),
             fontsize=7,
             color='tan',
             horizontalalignment='right', verticalalignment='top')
-ax.annotate('Primary hyperparatyroidism', (-64807000, 5),
-            xytext=(0.41, 0.12), textcoords='axes fraction',
+ax.annotate('Metastatic PNET', (-64807000, 5),
+            xytext=(0.35, 0.125), textcoords='axes fraction',
 #            arrowprops=dict(facecolor='gray', shrink=0.95),
             fontsize=7,
             color='darkgrey',

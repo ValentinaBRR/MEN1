@@ -19,6 +19,12 @@ loads the file extracted from Clinvar into a pandas dataframe
 
 
 df = pd.read_excel(path_project + f_cv)
+df = df[df.var_class == 'germline'].copy()
+
+shares = pd.DataFrame(df.var_type.value_counts())
+shares['pct_share'] = shares.var_type/shares.var_type.sum()
+shares['cumulative_share'] = shares.pct_share.cumsum()
+
 l_introns = df[
     (df.var_type.notnull())
     &
@@ -40,6 +46,7 @@ l_variants = df_ex.var_type.unique().tolist()
 l_colours = sns.color_palette('colorblind',len(l_variants))
 d_markers = {
     'deletion' : '<',
+    'insertion': 'v',
     'frameshift': '>',
     'loss_of_termination_codon': 'd',
     'missense': 's',

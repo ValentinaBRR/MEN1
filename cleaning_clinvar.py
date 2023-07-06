@@ -14,6 +14,8 @@ sets names for directories and file
 path_project = '/Users/valentinaburrai/Data/MEN1/Input/'
 f_clinvar = 'clinvar_result_MEN1_2023_04_21.txt'
 f_ensembl = 'Ensembl_exons_2023_05_01_ENST00000450708.csv'
+f_cosmic = 'Gene_mutationsTue Jun 27 16_39_17 2023.csv'
+f_ensembl_variants = 'ensembl-export_Variants_including_Cosmic_2023_07_06.csv'
 '''
 loads the file extracted from Clinvar into a pandas dataframe
 '''
@@ -24,8 +26,8 @@ df.drop_duplicates(inplace=True)
 gets rid of all large variants affecting more than one gene,
  then discards the Gene(s) column;
 gets rid of all variants that are not pathogenic
-
 '''
+
 df = df[df['Gene(s)'] == 'MEN1']
 df = df[df['Clinical significance (Last reviewed)']
         .str.contains('pathogenic', case=False, regex=True)]
@@ -164,6 +166,37 @@ df['functional_domain'] = np.where(
                  '')))
 
 '''
+tags variants as somatic when they are included in the data set
+provided by cosmic https://cancer.sanger.ac.uk/cosmic/search?q=MEN1
+As Cosmic does not list the MANE Select/Ensembl canonical transcript:
+    ,
+the transcript was chosen comparing the nearest transcript quoted by cosmic:
+    http://www.ensembl.org/Homo_sapiens/Transcript/Exons?db=core;g=ENSG00000133895;r=11:64803516-64810686;t=ENST00000315422
+to the canonical transcript:
+    http://www.ensembl.org/Homo_sapiens/Transcript/Exons?db=core;g=ENSG00000133895;r=11:64803516-64810686;t=ENST00000450708
+
+there were no variants in 5' upstream sequence,
+ exon 1 and intron 1-2. Otherwise they would have been excluded
+ as these gene segments do not overlap in the two transcripts
+
+'''
+df_c = pd.read_csv(path_project + f_cosmic)
+
+df_vars = pd.merge(
+    df,
+    df_c,
+    how='inner',
+    left_on=['gene_var'],
+    right_on=['CDS Mutation']
+    )
+l_somatic = df_vars.VariationID.tolist()
+
+df['var_class'] = np.where(
+    df.VariationID.isin(l_somatic),
+                          'somatic',
+                          'germline')
+
+'''
 tags each variation by type
 '''
 #tags delins
@@ -257,6 +290,16 @@ df['var_type'] = np.where(
      &
      (df.aa_wild_type != df.aa_mutated)),
                           'missense',
+                          df.var_type)
+
+#tags two manual entries that have eluded rules
+df['var_type'] = np.where(
+    (df.VariationID == 446503),
+                          'loss_of_termination_codon',
+                          df.var_type)
+df['var_type'] = np.where(
+    (df.VariationID == 527275),
+                          'insertion',
                           df.var_type)
 
 '''
@@ -417,6 +460,7 @@ l_cols_to_keep = [
     'aa_var',
     'aa_wild_type', 'aa_mutated',
     'aa_wt_type', 'aa_m_type',
+    'var_class',
     'var_type',
     'functional_domain',
     'missense_type'

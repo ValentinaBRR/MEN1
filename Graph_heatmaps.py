@@ -21,7 +21,26 @@ f_clinvar = 'cv_full.xlsx'
 
 
 df = pd.read_excel(path_project+f_clinvar)
+
+df = df[df.var_class == 'germline'].copy()
+
 df_m = df[df.var_type == 'missense'].copy()
+
+shares_aa = pd.DataFrame(df_m.aa_wild_type.value_counts())
+shares_aa['pct_share'] = shares_aa.aa_wild_type/shares_aa.aa_wild_type.sum()
+shares_aa['cumulative_share'] = shares_aa.pct_share.cumsum()
+
+shares_aa2 = pd.DataFrame(df_m.aa_mutated.value_counts())
+shares_aa2['pct_share'] = shares_aa2.aa_mutated/shares_aa2.aa_mutated.sum()
+shares_aa2['cumulative_share'] = shares_aa2.pct_share.cumsum()
+
+shares_at = pd.DataFrame(df_m.aa_wt_type.value_counts())
+shares_at['pct_share'] = shares_at.aa_wt_type/shares_at.aa_wt_type.sum()
+shares_at['cumulative_share'] = shares_at.pct_share.cumsum()
+
+shares_at2 = pd.DataFrame(df_m.aa_m_type.value_counts())
+shares_at2['pct_share'] = shares_at2.aa_m_type/shares_at2.aa_m_type.sum()
+shares_at2['cumulative_share'] = shares_at2.pct_share.cumsum()
 
 
 df_graph1 = pd.crosstab(
@@ -32,7 +51,8 @@ df_graph1 = pd.crosstab(
 
 df_graph2 = pd.crosstab(
     index=df_m.aa_wt_type,
-#    margins=True,
+    margins=True,
+    normalize=True,
     columns=df_m.aa_m_type
     )
 l_labels = df_graph2.columns.tolist()

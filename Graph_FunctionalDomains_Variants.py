@@ -18,12 +18,14 @@ lt_disordered = [(465-4, 93)]
 lt_basic_acid = [((465-5), 38)]
 
 df = pd.read_excel(path_project+f_clinvar)
-
+df = df[df.var_class == 'germline'].copy()
 
 #%% 
 '''
 based on Thakker 2014 (PMID: 23933118)
 two variants in his top 9 list could not be matched to ClinVar
+only one variant is germline, so this was dropped.
+left here in case a comparison between germline and somatic arises at some point
 '''
 #this was the index of the df used to build a univocal list [51,66, 83?, 147, 198, 314, 359, 396, 397]
 
@@ -94,11 +96,18 @@ ax.broken_barh(lt_basic_acid,
                   (0, 9),
                   facecolors='mediumaquamarine',
                   alpha=0.2)
-
-ax.bar(df_af_graph_other['position'], df_af_graph_other['count'],
+ax.bar(df_af_graph['position'], df_af_graph['count'],
           color='black')
-ax.bar(df_af_graph_hot_spots['position'], df_af_graph_hot_spots['count'],
-          color='red')
+
+
+'''
+the following is to be used instead of the above to show hotspots if
+all varaints (both germline and somatic are considered)
+'''
+#ax.bar(df_af_graph_other['position'], df_af_graph_other['count'],
+#          color='black')
+#ax.bar(df_af_graph_hot_spots['position'], df_af_graph_hot_spots['count'],
+#          color='red')
 
 ax.spines['left'].set_visible(False)
 ax.spines['left'].set_visible(False)

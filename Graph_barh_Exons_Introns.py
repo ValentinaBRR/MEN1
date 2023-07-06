@@ -72,7 +72,7 @@ fig, ax = plt.subplots(nrows=1,
                        figsize=(15*cm, 4*cm),
 #                       sharex=True
                        )  #rows, columns, width and height
-fig.suptitle('MEN1 transcript NM_001370259.2 ', fontsize=10)
+fig.suptitle('MEN1-213', fontsize=10)
 
 ax.broken_barh(lt_introns, (10, 9),facecolors='tomato')
 ax.broken_barh(lt_exons, (20, 9), facecolors='cornflowerblue')

@@ -21,6 +21,12 @@ loads the file extracted from Clinvar into a pandas dataframe
 
 
 df = pd.read_excel(path_project + f_cv)
+df = df[df.var_class == 'germline'].copy()
+
+shares = pd.DataFrame(df.missense_type.value_counts())
+shares['pct_share'] = shares.missense_type/shares.missense_type.sum()
+shares['cumulative_share'] = shares.pct_share.cumsum()
+
 l_introns = df[
     (df.var_type.notnull())
     &
@@ -40,7 +46,7 @@ df_ex = df[df.var_id.isin(l_exons)].copy()
 
 df_m = df[df.missense_type.notnull()].copy()
 s1 = df_m.missense_type.value_counts()
-l_tops = s1.index[s1>=5].tolist()
+l_tops = s1.index[s1>3].tolist()
 
 df_m['missense_top_types'] = np.where(df_m.missense_type.isin(l_tops),
                                       df_m.missense_type,
@@ -55,11 +61,10 @@ l_colours = sns.color_palette('colorblind',len(l_tops))
 d_markers = {
     'neutral_to_neutral' : '<',
     'neutral_to_charged_positive': '>',
-    'polar_uncharged_to_aromatic': 'd',
-    'neutral_to_charged_negative': 's',
     'aromatic_to_polar_uncharged': 'p',
-    'charged_negative_to_charged_positive': 'X',
-    'neutral_to_polar_uncharged': '^',
+    'neutral_to_charged_negative': 's',
+    'polar_uncharged_to_aromatic': 'd',
+    'charged_positive_to_charged_positive': 'X',
     'other': 'v'
     }
 
